@@ -7,6 +7,7 @@
 //
 
 #import "MCSwipeTableViewCell.h"
+#import "UIImage+Tint.h"
 
 static CGFloat const kMCStop1                       = 0.25; // Percentage limit to trigger the first action
 static CGFloat const kMCStop2                       = 0.75; // Percentage limit to trigger the second action
@@ -18,6 +19,11 @@ static NSTimeInterval const kMCBounceDuration1      = 0.2;  // Duration of the f
 static NSTimeInterval const kMCBounceDuration2      = 0.1;  // Duration of the second part of the bounce animation
 static NSTimeInterval const kMCDurationLowLimit     = 0.25; // Lowest duration when swiping the cell because we try to simulate velocity
 static NSTimeInterval const kMCDurationHighLimit    = 0.1;  // Highest duration when swiping the cell because we try to simulate velocity
+
+static CGFloat const kBarWidth                      = 10.0; // Width of pull bar
+static CGFloat const kDefaultPullPercentage         = 0.25; // Percentage that sliding view starts moving with pull
+static CGFloat const kLabelOffset1                  = 100.0;// X Offset for label
+static CGFloat const kLabelOffset2                  = 35.0;// X Offset for label
 
 typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     MCSwipeTableViewCellDirectionLeft = 0,
@@ -36,6 +42,8 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 @property (nonatomic, strong) UIView *colorIndicatorView;
 @property (nonatomic, strong) UIView *slidingView;
 @property (nonatomic, strong) UIView *activeView;
+@property (nonatomic, strong) UIView *barView;
+@property (nonatomic, strong) UILabel *label;
 
 // Initialization
 - (void)initializer;
@@ -125,19 +133,13 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     
     _modeForState1 = MCSwipeTableViewCellModeNone;
     _modeForState2 = MCSwipeTableViewCellModeNone;
-    _modeForState3 = MCSwipeTableViewCellModeNone;
-    _modeForState4 = MCSwipeTableViewCellModeNone;
     
     _color1 = nil;
     _color2 = nil;
-    _color3 = nil;
-    _color4 = nil;
     
     _activeView = nil;
     _view1 = nil;
     _view2 = nil;
-    _view3 = nil;
-    _view4 = nil;
 }
 
 #pragma mark - Prepare reuse
@@ -172,11 +174,15 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     _colorIndicatorView = [[UIView alloc] initWithFrame:self.bounds];
     _colorIndicatorView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
     _colorIndicatorView.backgroundColor = self.defaultColor ? self.defaultColor : [UIColor clearColor];
-    [self addSubview:_colorIndicatorView];
     
+    [self addSubview:_colorIndicatorView];
+
     _slidingView = [[UIView alloc] init];
     _slidingView.contentMode = UIViewContentModeCenter;
     [_colorIndicatorView addSubview:_slidingView];
+    
+    _barView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, kBarWidth, _contentScreenshotView.frame.size.height)];
+    [_colorIndicatorView addSubview:_barView];
     
     _contentScreenshotView = [[UIImageView alloc] initWithImage:contentViewScreenshotImage];
     [self addSubview:_contentScreenshotView];
@@ -189,6 +195,9 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     
     [_slidingView removeFromSuperview];
     _slidingView = nil;
+    
+    [_barView removeFromSuperview];
+    _barView = nil;
     
     [_colorIndicatorView removeFromSuperview];
     _colorIndicatorView = nil;
@@ -212,7 +221,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 
 #pragma mark - Swipe configuration
 
-- (void)setSwipeGestureWithView:(UIView *)view
+- (void)setSwipeGestureWithView:(UIImageView *)view
                           color:(UIColor *)color
                            mode:(MCSwipeTableViewCellMode)mode
                           state:(MCSwipeTableViewCellState)state
@@ -236,19 +245,6 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         _modeForState2 = mode;
     }
     
-    if ((state & MCSwipeTableViewCellState3) == MCSwipeTableViewCellState3) {
-        _completionBlock3 = completionBlock;
-        _view3 = view;
-        _color3 = color;
-        _modeForState3 = mode;
-    }
-    
-    if ((state & MCSwipeTableViewCellState4) == MCSwipeTableViewCellState4) {
-        _completionBlock4 = completionBlock;
-        _view4 = view;
-        _color4 = color;
-        _modeForState4 = mode;
-    }
 }
 
 #pragma mark - Handle Gestures
@@ -276,6 +272,21 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         [self animateWithOffset:CGRectGetMinX(_contentScreenshotView.frame)];
         [gesture setTranslation:CGPointZero inView:self];
         
+        //ADD LABEL - CAN BE REFACTORED
+        CGFloat xOffset;
+        NSTextAlignment labelAlignment;
+        if (_direction == MCSwipeTableViewCellDirectionRight) {
+            xOffset = _contentScreenshotView.frame.origin.x - kBarWidth;
+            _barView.backgroundColor = self.color1;
+            self.defaultColor = self.defaultColor1;
+        } else if (_direction == MCSwipeTableViewCellDirectionLeft) {
+            xOffset = _contentScreenshotView.frame.origin.x + _contentScreenshotView.frame.size.width;
+            _barView.backgroundColor = self.color2;
+            self.defaultColor = self.defaultColor2;
+        }
+        
+        self.barView.frame = CGRectMake(xOffset, 0, kBarWidth, _contentScreenshotView.frame.size.height);
+        
         // Notifying the delegate that we are dragging with an offset percentage.
         if ([_delegate respondsToSelector:@selector(swipeTableViewCell:didSwipeWithPercentage:)]) {
             [_delegate swipeTableViewCell:self didSwipeWithPercentage:percentage];
@@ -297,14 +308,6 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         
         else if (cellState == MCSwipeTableViewCellState2 && _modeForState2) {
             cellMode = self.modeForState2;
-        }
-        
-        else if (cellState == MCSwipeTableViewCellState3 && _modeForState3) {
-            cellMode = self.modeForState3;
-        }
-        
-        else if (cellState == MCSwipeTableViewCellState4 && _modeForState4) {
-            cellMode = self.modeForState4;
         }
         
         if (cellMode == MCSwipeTableViewCellModeExit && _direction != MCSwipeTableViewCellDirectionCenter) {
@@ -334,11 +337,11 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         CGPoint point = [g velocityInView:self];
         
         if (fabsf(point.x) > fabsf(point.y) ) {
-            if (point.x < 0 && !_modeForState3 && !_modeForState4) {
+            if (point.x < 0 && !_modeForState2) {
                 return NO;
             }
             
-            if (point.x > 0 && !_modeForState1 && !_modeForState2) {
+            if (point.x > 0 && !_modeForState1) {
                 return NO;
             }
             
@@ -399,7 +402,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     }
 }
 
-- (UIView *)viewWithPercentage:(CGFloat)percentage {
+- (UIImageView *)viewWithPercentage:(CGFloat)percentage {
     
     UIView *view;
     
@@ -407,16 +410,8 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         view = _view1;
     }
     
-    if (percentage >= _secondTrigger && _modeForState2) {
+    if (percentage < 0  && _modeForState2) {
         view = _view2;
-    }
-    
-    if (percentage < 0  && _modeForState3) {
-        view = _view3;
-    }
-    
-    if (percentage <= -_secondTrigger && _modeForState4) {
-        view = _view4;
     }
     
     return view;
@@ -429,8 +424,8 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         alpha = percentage / _firstTrigger;
     }
     
-    else if (percentage < 0 && percentage > -_firstTrigger) {
-        alpha = fabsf(percentage / _firstTrigger);
+    else if (percentage < 0 && percentage > -_secondTrigger) {
+        alpha = fabsf(percentage / _secondTrigger);
     }
     
     else {
@@ -451,16 +446,26 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         color = _color1;
     }
     
-    if (percentage > _secondTrigger && _modeForState2) {
+    if (percentage < -_secondTrigger && _modeForState2) {
         color = _color2;
     }
     
-    if (percentage < -_firstTrigger && _modeForState3) {
-        color = _color3;
+    return color;
+}
+
+- (UIColor *)labelColorWithPercentage:(CGFloat)percentage {
+    UIColor *color;
+    
+    // Background Color
+    
+    color = _defaultLabelColor;
+    
+    if (percentage > _firstTrigger && _modeForState1) {
+        color = _activeLabelColor;
     }
     
-    if (percentage <= -_secondTrigger && _modeForState4) {
-        color = _color4;
+    if (percentage < -_secondTrigger && _modeForState2) {
+        color = _activeLabelColor;
     }
     
     return color;
@@ -475,16 +480,8 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         state = MCSwipeTableViewCellState1;
     }
     
-    if (percentage >= _secondTrigger && _modeForState2) {
+    if (percentage <= -_secondTrigger && _modeForState2) {
         state = MCSwipeTableViewCellState2;
-    }
-    
-    if (percentage <= -_firstTrigger && _modeForState3) {
-        state = MCSwipeTableViewCellState3;
-    }
-    
-    if (percentage <= -_secondTrigger && _modeForState4) {
-        state = MCSwipeTableViewCellState4;
     }
     
     return state;
@@ -495,11 +492,34 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 - (void)animateWithOffset:(CGFloat)offset {
     CGFloat percentage = [self percentageWithOffset:offset relativeToWidth:CGRectGetWidth(self.bounds)];
     
-    UIView *view = [self viewWithPercentage:percentage];
+    UIImageView *view = [self viewWithPercentage:percentage];
     
     // View Position.
     if (view) {
         [self setViewOfSlidingView:view];
+        
+        //ADD LABEL - COULD BE REFACTORED
+        CGFloat labelXOffset;
+        NSTextAlignment labelAlignment;
+        NSString *text;
+        if (_direction == MCSwipeTableViewCellDirectionRight) {
+            labelXOffset = -kLabelOffset1;
+            labelAlignment = NSTextAlignmentRight;
+            text = _text1;
+        } else if (_direction == MCSwipeTableViewCellDirectionLeft) {
+            labelXOffset = kLabelOffset2;
+            labelAlignment = NSTextAlignmentLeft;
+            text = _text2;
+        } else {
+            return;
+        }
+        
+        _label = [[UILabel alloc] initWithFrame:CGRectMake(labelXOffset, 0, 100, _slidingView.frame.size.height)];
+        _label.text = text;
+        _label.font = _labelFont;
+        _label.textAlignment = labelAlignment;
+        [_slidingView addSubview:_label];
+        
         _slidingView.alpha = [self alphaWithPercentage:percentage];
         [self slideViewWithPercentage:percentage view:view isDragging:self.shouldAnimateIcons];
     }
@@ -508,6 +528,12 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     UIColor *color = [self colorWithPercentage:percentage];
     if (color != nil) {
         _colorIndicatorView.backgroundColor = color;
+    }
+    
+    UIColor *labelColor = [self labelColorWithPercentage:percentage];
+    if (labelColor != nil) {
+        _label.textColor = labelColor;
+        view.image = [view.image imageTintedWithColor:labelColor];
     }
 }
 
@@ -520,20 +546,20 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     position.y = CGRectGetHeight(self.bounds) / 2.0;
     
     if (isDragging) {
-        if (percentage >= 0 && percentage < _firstTrigger) {
-            position.x = [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+        if (percentage >= 0 && percentage < kDefaultPullPercentage) {
+            position.x = [self offsetWithPercentage:(kDefaultPullPercentage / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
         }
         
-        else if (percentage >= _firstTrigger) {
-            position.x = [self offsetWithPercentage:percentage - (_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+        else if (percentage >= kDefaultPullPercentage) {
+            position.x = [self offsetWithPercentage:percentage - (kDefaultPullPercentage / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
         }
         
-        else if (percentage < 0 && percentage >= -_firstTrigger) {
-            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+        else if (percentage < 0 && percentage >= -kDefaultPullPercentage) {
+            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(kDefaultPullPercentage / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
         }
         
-        else if (percentage < -_firstTrigger) {
-            position.x = CGRectGetWidth(self.bounds) + [self offsetWithPercentage:percentage + (_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+        else if (percentage < -kDefaultPullPercentage) {
+            position.x = CGRectGetWidth(self.bounds) + [self offsetWithPercentage:percentage + (kDefaultPullPercentage / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
         }
     }
     
@@ -543,7 +569,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         }
         
         else if (_direction == MCSwipeTableViewCellDirectionLeft) {
-            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(_secondTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
         }
         
         else {
@@ -586,6 +612,13 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     UIColor *color = [self colorWithPercentage:_currentPercentage];
     if (color) {
         [_colorIndicatorView setBackgroundColor:color];
+    }
+    
+    UIColor *labelColor = [self labelColorWithPercentage:percentage];
+    if (labelColor != nil) {
+        _label.textColor = labelColor;
+        UIImageView *view = [self viewWithPercentage:percentage];
+        view.image = [view.image imageTintedWithColor:labelColor];
     }
     
     [UIView animateWithDuration:duration delay:0 options:(UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionAllowUserInteraction) animations:^{
@@ -689,16 +722,6 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         case MCSwipeTableViewCellState2: {
             mode = self.modeForState2;
             completionBlock = _completionBlock2;
-        } break;
-            
-        case MCSwipeTableViewCellState3: {
-            mode = self.modeForState3;
-            completionBlock = _completionBlock3;
-        } break;
-            
-        case MCSwipeTableViewCellState4: {
-            mode = self.modeForState4;
-            completionBlock = _completionBlock4;
         } break;
             
         default:

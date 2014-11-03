@@ -18,15 +18,10 @@ typedef NS_OPTIONS(NSUInteger, MCSwipeTableViewCellState) {
     
     /** 1st state triggered during a Left -> Right swipe. */
     MCSwipeTableViewCellState1 = (1 << 0),
-    
-    /** 2nd state triggered during a Left -> Right swipe. */
-    MCSwipeTableViewCellState2 = (1 << 1),
 
     /** 1st state triggered during a Right -> Left swipe. */
-    MCSwipeTableViewCellState3 = (1 << 2),
+    MCSwipeTableViewCellState2 = (1 << 1),
     
-    /** 2nd state triggered during a Right -> Left swipe. */
-    MCSwipeTableViewCellState4 = (1 << 3)
 };
 
 /** Describes the mode used during a swipe */
@@ -80,45 +75,44 @@ typedef void (^MCSwipeCompletionBlock)(MCSwipeTableViewCell *cell, MCSwipeTableV
 /** Color for background, when no state has been triggered. */
 @property (nonatomic, strong, readwrite) UIColor *defaultColor;
 
+/** Color for background, when swiping left. */
+@property (nonatomic, strong, readwrite) UIColor *defaultColor1;
+
+/** Color for background, when swiping right. */
+@property (nonatomic, strong, readwrite) UIColor *defaultColor2;
+
+/** Color for background, when swiping left. */
+@property (nonatomic, strong, readwrite) UIColor *defaultLabelColor;
+
+/** Color for background, when swiping right. */
+@property (nonatomic, strong, readwrite) UIColor *activeLabelColor;
+
+/** Label font. */
+@property (nonatomic, strong, readwrite) UIFont *labelFont;
+
+/** 1st color of the state triggered during a Left -> Right swipe. */
+@property (nonatomic, strong, readwrite) NSString *text1;
+
+/** 2nd color of the state triggered during a Right -> Left swipe. */
+@property (nonatomic, strong, readwrite) NSString *text2;
 
 /** 1st color of the state triggered during a Left -> Right swipe. */
 @property (nonatomic, strong, readwrite) UIColor *color1;
 
-/** 2nd color of the state triggered during a Left -> Right swipe. */
+/** 1st color of the state triggered during a Right -> Left swipe. */
 @property (nonatomic, strong, readwrite) UIColor *color2;
 
-/** 1st color of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, strong, readwrite) UIColor *color3;
-
-/** 2nd color of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, strong, readwrite) UIColor *color4;
-
-
 /** 1st view of the state triggered during a Left -> Right swipe. */
-@property (nonatomic, strong, readwrite) UIView *view1;
-
-/** 2nd view of the state triggered during a Left -> Right swipe. */
-@property (nonatomic, strong, readwrite) UIView *view2;
+@property (nonatomic, strong, readwrite) UIImageView *view1;
 
 /** 1st view of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, strong, readwrite) UIView *view3;
-
-/** 2nd view of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, strong, readwrite) UIView *view4;
-
+@property (nonatomic, strong, readwrite) UIImageView *view2;
 
 /** 1st Block of the state triggered during a Left -> Right swipe. */
 @property (nonatomic, copy, readwrite) MCSwipeCompletionBlock completionBlock1;
 
-/** 2nd Block of the state triggered during a Left -> Right swipe. */
-@property (nonatomic, copy, readwrite) MCSwipeCompletionBlock completionBlock2;
-
 /** 1st Block of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, copy, readwrite) MCSwipeCompletionBlock completionBlock3;
-
-/** 2nd Block of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, copy, readwrite) MCSwipeCompletionBlock completionBlock4;
-
+@property (nonatomic, copy, readwrite) MCSwipeCompletionBlock completionBlock2;
 
 // Percentage of when the first and second action are activated, respectively
 
@@ -132,14 +126,8 @@ typedef void (^MCSwipeCompletionBlock)(MCSwipeTableViewCell *cell, MCSwipeTableV
 /** 1st `MCSwipeTableViewCellMode` of the state triggered during a Left -> Right swipe. */
 @property (nonatomic, assign, readwrite) MCSwipeTableViewCellMode modeForState1;
 
-/** 2nd `MCSwipeTableViewCellMode` of the state triggered during a Left -> Right swipe. */
-@property (nonatomic, assign, readwrite) MCSwipeTableViewCellMode modeForState2;
-
 /** 1st `MCSwipeTableViewCellMode` of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, assign, readwrite) MCSwipeTableViewCellMode modeForState3;
-
-/** 2nd `MCSwipeTableViewCellMode` of the state triggered during a Right -> Left swipe. */
-@property (nonatomic, assign, readwrite) MCSwipeTableViewCellMode modeForState4;
+@property (nonatomic, assign, readwrite) MCSwipeTableViewCellMode modeForState2;
 
 
 /** Boolean indicator to know if the cell is currently dragged. */
@@ -160,7 +148,7 @@ typedef void (^MCSwipeCompletionBlock)(MCSwipeTableViewCell *cell, MCSwipeTableV
  *  @param state           `MCSwipeTableViewCellState` on which the properties are applied.
  *  @param completionBlock Block of the state triggered during a swipe.
  */
-- (void)setSwipeGestureWithView:(UIView *)view
+- (void)setSwipeGestureWithView:(UIImageView *)view
                           color:(UIColor *)color
                            mode:(MCSwipeTableViewCellMode)mode
                           state:(MCSwipeTableViewCellState)state
