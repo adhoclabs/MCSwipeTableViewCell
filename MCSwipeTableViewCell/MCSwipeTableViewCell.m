@@ -23,7 +23,7 @@ static NSTimeInterval const kMCDurationHighLimit    = 0.1;  // Highest duration 
 static CGFloat const kBarWidth                      = 10.0; // Width of pull bar
 static CGFloat const kDefaultPullPercentage         = 0.25; // Percentage that sliding view starts moving with pull
 static CGFloat const kLabelOffset1                  = 110.0;// X Offset for label
-static CGFloat const kLabelOffset2                  = 35.0;// X Offset for label
+static CGFloat const kLabelOffset2                  = 30.0;// X Offset for label
 
 typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     MCSwipeTableViewCellDirectionLeft = 0,
