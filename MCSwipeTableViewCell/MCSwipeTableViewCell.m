@@ -273,7 +273,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
         [gesture setTranslation:CGPointZero inView:self];
         
         //ADD LABEL - CAN BE REFACTORED
-        CGFloat xOffset;
+        CGFloat xOffset = 0.0f;
         NSTextAlignment labelAlignment;
         if (_direction == MCSwipeTableViewCellDirectionRight) {
             xOffset = _contentScreenshotView.frame.origin.x - kBarWidth;
